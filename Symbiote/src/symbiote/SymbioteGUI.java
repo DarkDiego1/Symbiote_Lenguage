@@ -36,7 +36,7 @@ public class SymbioteGUI extends JFrame {
     private JTextArea         editor, lineNums;
     private JTable            tabla;
     private DefaultTableModel modelo;
-    private JTextArea         errLex, errSin;
+    private JTextArea         errLex, errSin, errSem;
     private JLabel            lblEstado, lblConteo;
     private JTabbedPane       tabs;
 
@@ -144,6 +144,7 @@ public class SymbioteGUI extends JFrame {
         acciones.add(Box.createHorizontalStrut(10));
         acciones.add(boton("Lexico  F5", null, e -> ejecutarLexico(true), true));
         acciones.add(boton("Sintactico  F6", null, e -> ejecutarSintactico(), true));
+        acciones.add(boton("Semantico  F7", null, e -> ejecutarSemantico(), true));
 
         hdr.add(marca, BorderLayout.WEST);
         hdr.add(acciones, BorderLayout.EAST);
@@ -151,15 +152,34 @@ public class SymbioteGUI extends JFrame {
     }
 
     private JButton boton(String txt, String tip, ActionListener al, boolean destacado) {
-        JButton b = new JButton(txt);
+        Color bg = destacado ? ACC : bgCard;
+        Color fg = destacado ? Color.WHITE : textPri;
+        Color bd = destacado ? ACC : borde;
+
+        JButton b = new JButton(txt) {
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color relleno = getModel().isPressed() ? bg.darker() : bg;
+                g2.setColor(relleno);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.setColor(bd);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.setFont(getFont());
+                g2.setColor(fg);
+                FontMetrics fm = g2.getFontMetrics();
+                int tx = (getWidth() - fm.stringWidth(getText())) / 2;
+                int ty = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString(getText(), tx, ty);
+                g2.dispose();
+            }
+        };
         b.setFont(F_UIB);
+        b.setContentAreaFilled(false);
+        b.setBorderPainted(false);
         b.setFocusPainted(false);
-        b.setForeground(destacado ? Color.WHITE : textPri);
-        b.setBackground(destacado ? ACC : bgCard);
-        b.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(destacado ? ACC : borde, 1, true),
-            BorderFactory.createEmptyBorder(7, 14, 7, 14)));
-        b.setOpaque(true);
+        b.setOpaque(false);
+        b.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         if (tip != null) b.setToolTipText(tip);
         b.addActionListener(al);
@@ -269,10 +289,12 @@ public class SymbioteGUI extends JFrame {
 
         errLex = areaErrores();
         errSin = areaErrores();
+        errSem = areaErrores();
 
         tabs.addTab("Tokens", spTabla);
         tabs.addTab("Lexico", envolver(errLex));
         tabs.addTab("Sintactico", envolver(errSin));
+        tabs.addTab("Semantico", envolver(errSem));
         tabs.addTab("Guia", envolver(areaGuia()));
 
         p.add(tabs, BorderLayout.CENTER);
@@ -333,6 +355,8 @@ public class SymbioteGUI extends JFrame {
         am.put("lex", new AbstractAction() { public void actionPerformed(ActionEvent e) { ejecutarLexico(true); } });
         im.put(KeyStroke.getKeyStroke("F6"), "sin");
         am.put("sin", new AbstractAction() { public void actionPerformed(ActionEvent e) { ejecutarSintactico(); } });
+        im.put(KeyStroke.getKeyStroke("F7"), "sem");
+        am.put("sem", new AbstractAction() { public void actionPerformed(ActionEvent e) { ejecutarSemantico(); } });
     }
 
     private void alternarTema(ActionEvent e) { oscuro = !oscuro; reconstruir(); }
@@ -359,7 +383,7 @@ public class SymbioteGUI extends JFrame {
         return toks;
     }
 
-    private void ejecutarSintactico() {
+    private Parser ejecutarSintactico() {
         List<Token> toks = ejecutarLexico(false);
         Parser p = new Parser(toks);
         p.parse();
@@ -368,6 +392,21 @@ public class SymbioteGUI extends JFrame {
         errSin.setForeground(errs.isEmpty() ? OK : errFg);
         tabs.setSelectedIndex(2);
         setEstado(errs.isEmpty() ? "Analisis sintactico completado sin errores" : errs.size() + " error(es) sintactico(s) encontrado(s)", errs.isEmpty());
+        return p;
+    }
+
+    private void ejecutarSemantico() {
+        List<Token> toks = ejecutarLexico(false);
+        Parser p = new Parser(toks);
+        p.parse();
+
+        Semantico s = new Semantico();
+        s.analizar(p.getAst());
+        List<String> errs = s.getErrores();
+        errSem.setText(errs.isEmpty() ? "Sin errores semanticos." : String.join("\n", errs));
+        errSem.setForeground(errs.isEmpty() ? OK : errFg);
+        tabs.setSelectedIndex(3);
+        setEstado(errs.isEmpty() ? "Analisis semantico completado sin errores" : errs.size() + " error(es) semantico(s) encontrado(s)", errs.isEmpty());
     }
 
     private void setEstado(String msg, boolean ok) {
@@ -460,9 +499,15 @@ public class SymbioteGUI extends JFrame {
         "  && || !       logicos\n\n" +
         "COMENTARIOS\n───────────\n" +
         "  // texto hasta fin de linea\n\n" +
+        "FASES DEL ANALIZADOR\n─────────────────────\n" +
+        "  Lexico       convierte el texto en tokens\n" +
+        "  Sintactico   valida la gramatica y arma el AST\n" +
+        "  Semantico    construye la tabla de simbolos y\n" +
+        "               revisa que los tipos coincidan\n\n" +
         "ATAJOS\n──────\n" +
         "  F5   analisis lexico\n" +
-        "  F6   analisis sintactico\n";
+        "  F6   analisis sintactico\n" +
+        "  F7   analisis semantico\n";
     }
 
     private void estilizarBarra(JScrollBar sb) {
