@@ -34,7 +34,6 @@ public class Parser {
 
     public void parse() {
         ast = new Programa();
-        while (check(Token.Tipo.FN)) ast.fns.add(parseFn());
         expect(Token.Tipo.ENTRY, "el programa debe iniciar con 'ITS DANGEROUS TO GO ALONE, TAKE THIS'");
         ast.cuerpo = parseBloque();
         if (!check(Token.Tipo.EOF))
@@ -95,6 +94,7 @@ public class Parser {
     private Nodo parseSentencia() {
         if (check(Token.Tipo.ERROR)) { advance(); return new Bloque(); }
         if (check(Token.Tipo.LET)) return parseLet();
+        if (check(Token.Tipo.MAKE)) return parseFn();
         if (check(Token.Tipo.IDENT) && (peek2().tipo == Token.Tipo.ASSIGN || peek2().tipo == Token.Tipo.LBRACKET)) return parseAsigna();
         if (check(Token.Tipo.IDENT) && peek2().tipo == Token.Tipo.LPAREN) {
             Llamada ll = parseLlamada();

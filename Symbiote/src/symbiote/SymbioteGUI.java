@@ -416,11 +416,11 @@ public class SymbioteGUI extends JFrame {
 
     private void cargarEjemplo(ActionEvent e) {
         editor.setText(
-            "fn add(a be int, b be int) -> int {\n" +
-            "    return a + b;\n" +
-            "}\n\n" +
             "ITS DANGEROUS TO GO ALONE, TAKE THIS\n" +
             "{\n" +
+            "    make add(a be int, b be int) -> int {\n" +
+            "        return a + b;\n" +
+            "    }\n\n" +
             "    let scores be int[] = [10, 20, 30];\n" +
             "    let total be int = 0;\n\n" +
             "    for (let i be int = 0; i < 3; i = i + 1) {\n" +
@@ -473,7 +473,7 @@ public class SymbioteGUI extends JFrame {
         "══════════════════════\n\n" +
         "INICIO DE PROGRAMA\n──────────────────\n" +
         "  ITS DANGEROUS TO GO ALONE, TAKE THIS\n" +
-        "  { ...cuerpo del programa... }\n\n" +
+        "  { ...todo el programa va aqui, incluyendo funciones... }\n\n" +
         "VARIABLES\n─────────\n" +
         "  let nombre be tipo = valor;\n" +
         "  let lista be tipo[] = [v1, v2, v3];\n\n" +
@@ -483,7 +483,7 @@ public class SymbioteGUI extends JFrame {
         "  string   cadena\n" +
         "  bool     true / false\n\n" +
         "FUNCIONES\n─────────\n" +
-        "  fn nombre(param be tipo, ...) -> tipo {\n" +
+        "  make nombre(param be tipo, ...) -> tipo {\n" +
         "      return valor;\n" +
         "  }\n\n" +
         "CONTROL DE FLUJO\n────────────────\n" +

@@ -15,8 +15,7 @@ class Param {
 }
 
 class Programa extends Nodo {
-    List<FnDecl> fns = new ArrayList<>();
-    Bloque       cuerpo;
+    Bloque cuerpo;
 }
 
 class FnDecl extends Nodo {
