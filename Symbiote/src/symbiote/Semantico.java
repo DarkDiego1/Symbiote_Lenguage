@@ -26,23 +26,20 @@ public class Semantico {
         errs.clear();
         vars = new LinkedHashMap<>();
         fns.clear();
-        if (p == null) return;
-
-        for (FnDecl f : p.fns) {
-            List<Token.Tipo> pts = new ArrayList<>();
-            for (Param pr : f.params) pts.add(pr.tipo);
-            fns.put(f.nombre, new FnInfo(pts, f.retTipo));
-        }
-
-        for (FnDecl f : p.fns) {
-            Map<String, VarInfo> exterior = vars;
-            vars = new LinkedHashMap<>(exterior);
-            for (Param pr : f.params) vars.put(pr.nombre, new VarInfo(pr.tipo, pr.arr));
-            bloque(f.cuerpo);
-            vars = exterior;
-        }
-
+        if (p == null || p.cuerpo == null) return;
+        registrarFns(p.cuerpo);
         bloque(p.cuerpo);
+    }
+
+    private void registrarFns(Bloque b) {
+        for (Nodo n : b.sentencias) {
+            if (n instanceof FnDecl) {
+                FnDecl f = (FnDecl) n;
+                List<Token.Tipo> pts = new ArrayList<>();
+                for (Param pr : f.params) pts.add(pr.tipo);
+                fns.put(f.nombre, new FnInfo(pts, f.retTipo));
+            }
+        }
     }
 
     private void bloque(Bloque b) {
@@ -51,6 +48,7 @@ public class Semantico {
     }
 
     private void sentencia(Nodo n) {
+        if (n instanceof FnDecl)   { fnDecl((FnDecl) n); return; }
         if (n instanceof LetDecl)  { let((LetDecl) n); return; }
         if (n instanceof Asigna)   { asigna((Asigna) n); return; }
         if (n instanceof Llamada)  { tipoLlamada((Llamada) n); return; }
@@ -60,6 +58,19 @@ public class Semantico {
         if (n instanceof Emitir)   { emitir((Emitir) n); return; }
         if (n instanceof Retorno)  { retorno((Retorno) n); return; }
         if (n instanceof Bloque)   { bloque((Bloque) n); return; }
+    }
+
+    private void fnDecl(FnDecl f) {
+        List<Token.Tipo> pts = new ArrayList<>();
+        for (Param pr : f.params) pts.add(pr.tipo);
+        fns.putIfAbsent(f.nombre, new FnInfo(pts, f.retTipo));
+
+        Map<String, VarInfo> exterior = vars;
+        vars = new LinkedHashMap<>(exterior);
+        for (Param pr : f.params) vars.put(pr.nombre, new VarInfo(pr.tipo, pr.arr));
+        registrarFns(f.cuerpo);
+        bloque(f.cuerpo);
+        vars = exterior;
     }
 
     private void let(LetDecl n) {
@@ -176,7 +187,15 @@ public class Semantico {
         if (e instanceof Unaria) {
             Unaria u = (Unaria) e;
             Token.Tipo t = tipo(u.expr);
-            if (u.op == Token.Tipo.NOT) return t == Token.Tipo.BOOL ? Token.Tipo.BOOL : null;
+            if (u.op == Token.Tipo.NOT) {
+                if (t != null && t != Token.Tipo.BOOL)
+                    errs.add("Error semantico [L" + u.ln + ":C" + u.col + "]: el operador '!' requiere bool, se uso " + nomTipo(t));
+                return Token.Tipo.BOOL;
+            }
+            if (t != null && t != Token.Tipo.INT && t != Token.Tipo.FLOAT) {
+                errs.add("Error semantico [L" + u.ln + ":C" + u.col + "]: el operador unario '-' no es valido para " + nomTipo(t));
+                return null;
+            }
             return t;
         }
 
@@ -184,26 +203,56 @@ public class Semantico {
             Binaria b = (Binaria) e;
             Token.Tipo izq = tipo(b.izq);
             Token.Tipo der = tipo(b.der);
+            boolean sabemos = izq != null && der != null;
             switch (b.op) {
-                case AND: case OR:
-                    return (izq == Token.Tipo.BOOL && der == Token.Tipo.BOOL) ? Token.Tipo.BOOL : null;
-                case EQ: case NEQ: case LT: case GT: case LE: case GE:
-                    return Token.Tipo.BOOL;
                 case PLUS:
-                    if (izq == Token.Tipo.STRING || der == Token.Tipo.STRING) return Token.Tipo.STRING;
-                    if (izq == Token.Tipo.FLOAT || der == Token.Tipo.FLOAT) return Token.Tipo.FLOAT;
+                    if (!sabemos) return null;
                     if (izq == Token.Tipo.INT && der == Token.Tipo.INT) return Token.Tipo.INT;
+                    if (esNumerico(izq) && esNumerico(der)) return Token.Tipo.FLOAT;
+                    if (izq == Token.Tipo.STRING && der == Token.Tipo.STRING) return Token.Tipo.STRING;
+                    errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: operacion '+' invalida entre " + nomTipo(izq) + " y " + nomTipo(der));
                     return null;
                 case MINUS: case STAR: case SLASH:
-                    if (izq == Token.Tipo.FLOAT || der == Token.Tipo.FLOAT) return Token.Tipo.FLOAT;
+                    if (!sabemos) return null;
                     if (izq == Token.Tipo.INT && der == Token.Tipo.INT) return Token.Tipo.INT;
+                    if (esNumerico(izq) && esNumerico(der)) return Token.Tipo.FLOAT;
+                    errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: operacion '" + simboloOp(b.op) + "' invalida entre " + nomTipo(izq) + " y " + nomTipo(der));
                     return null;
+                case EQ: case NEQ:
+                    if (sabemos && !((esNumerico(izq) && esNumerico(der)) || izq == der))
+                        errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: no se puede comparar " + nomTipo(izq) + " con " + nomTipo(der));
+                    return Token.Tipo.BOOL;
+                case LT: case GT: case LE: case GE:
+                    if (sabemos && !(esNumerico(izq) && esNumerico(der)))
+                        errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: la comparacion '" + simboloOp(b.op) + "' requiere valores numericos, se uso " + nomTipo(izq) + " y " + nomTipo(der));
+                    return Token.Tipo.BOOL;
+                case AND: case OR:
+                    if (sabemos && !(izq == Token.Tipo.BOOL && der == Token.Tipo.BOOL))
+                        errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: el operador '" + simboloOp(b.op) + "' requiere bool, se uso " + nomTipo(izq) + " y " + nomTipo(der));
+                    return Token.Tipo.BOOL;
                 default:
                     return null;
             }
         }
 
         return null;
+    }
+
+    private boolean esNumerico(Token.Tipo t) { return t == Token.Tipo.INT || t == Token.Tipo.FLOAT; }
+
+    private String simboloOp(Token.Tipo op) {
+        switch (op) {
+            case MINUS: return "-";
+            case STAR:  return "*";
+            case SLASH: return "/";
+            case LT:    return "<";
+            case GT:    return ">";
+            case LE:    return "<=";
+            case GE:    return ">=";
+            case AND:   return "&&";
+            case OR:    return "||";
+            default:    return op.toString();
+        }
     }
 
     private boolean compat(Token.Tipo decl, Token.Tipo val) {

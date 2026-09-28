@@ -4,7 +4,7 @@ public class Token {
 
     public enum Tipo {
         ENTRY,
-        LET, BE, IF, ELSE, WHILE, FOR, FN, RETURN, EMIT,
+        LET, BE, IF, ELSE, WHILE, FOR, MAKE, RETURN, EMIT,
         INT, FLOAT, STRING, BOOL,
         TRUE, FALSE,
         LIT_INT, LIT_FLOAT, LIT_STRING,
@@ -47,7 +47,7 @@ public class Token {
             case ENTRY:
                 return "Entrada";
             case LET: case BE: case IF: case ELSE: case WHILE:
-            case FOR: case FN: case RETURN: case EMIT:
+            case FOR: case MAKE: case RETURN: case EMIT:
                 return "Palabra clave";
             case INT: case FLOAT: case STRING: case BOOL:
                 return "Tipo de dato";

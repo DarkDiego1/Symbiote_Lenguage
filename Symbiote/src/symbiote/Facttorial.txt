@@ -1,0 +1,9 @@
+ITS DANGEROUS TO GO ALONE, TAKE THIS{
+	let L be int = 2;
+	let Factorial be int;
+
+	for (let i be int = 0; i < L; i = i +1;) {
+		Factorial = Factorial * L ;
+		L - 1;
+	}
+}

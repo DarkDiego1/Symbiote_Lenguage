@@ -6,33 +6,34 @@ import javax.swing.*;
 public class SplashScreen extends JWindow {
 
     public SplashScreen() {
-        // Load and scale the image to a much larger size (width: 340px)
-        ImageIcon originalIcon = new ImageIcon(getClass().getResource("symbiote_logo.png"));
-        int targetWidth = 680; // Much larger size (adjust this number up or down as needed)
-        int originalWidth = originalIcon.getIconWidth();
-        int originalHeight = originalIcon.getIconHeight();
-        int targetHeight = (originalWidth > 0) ? (targetWidth * originalHeight) / originalWidth : 340;
-        
-        Image scaledImage = originalIcon.getImage().getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
-        ImageIcon icono = new ImageIcon(scaledImage);
-
+        ImageIcon icono = new ImageIcon(getClass().getResource("symbiote_logo.png"));
         JLabel imagen = new JLabel(icono);
-        // Generous padding around the larger logo to keep the border spacing clean
-        imagen.setBorder(BorderFactory.createEmptyBorder(45, 45, 45, 45));
+        imagen.setBorder(BorderFactory.createEmptyBorder(36, 36, 10, 36));
+
+        JLabel texto = new JLabel("Cargando Symbiote...", SwingConstants.CENTER);
+        texto.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        texto.setForeground(new Color(100, 100, 105));
+        texto.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
+
+        JProgressBar barra = new JProgressBar();
+        barra.setIndeterminate(true);
+        barra.setForeground(new Color(134, 97, 255));
+        barra.setBorder(BorderFactory.createEmptyBorder(0, 60, 28, 60));
+
+        JPanel pie = new JPanel(new BorderLayout());
+        pie.setBackground(Color.WHITE);
+        pie.add(texto, BorderLayout.NORTH);
+        pie.add(barra, BorderLayout.CENTER);
 
         JPanel raiz = new JPanel(new BorderLayout());
         raiz.setBackground(Color.WHITE);
         raiz.setBorder(BorderFactory.createLineBorder(new Color(225, 225, 230), 1));
         raiz.add(imagen, BorderLayout.CENTER);
+        raiz.add(pie, BorderLayout.SOUTH);
 
         setContentPane(raiz);
         pack();
         setLocationRelativeTo(null);
-    }
-
-    // Default duration is 3 seconds (can still use custom milisegundos version if needed)
-    public void mostrar(Runnable alTerminar) {
-        mostrar(5000, alTerminar);
     }
 
     public void mostrar(int milisegundos, Runnable alTerminar) {

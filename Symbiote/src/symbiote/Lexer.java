@@ -12,7 +12,7 @@ public class Lexer {
         KW.put("else",   Token.Tipo.ELSE);
         KW.put("while",  Token.Tipo.WHILE);
         KW.put("for",    Token.Tipo.FOR);
-        KW.put("fn",     Token.Tipo.FN);
+        KW.put("make",   Token.Tipo.MAKE);
         KW.put("return", Token.Tipo.RETURN);
         KW.put("emit",   Token.Tipo.EMIT);
         KW.put("int",    Token.Tipo.INT);

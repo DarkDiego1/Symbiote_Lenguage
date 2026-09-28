@@ -10,6 +10,9 @@ import javax.swing.border.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.*;
 import javax.swing.table.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 public class SymbioteGUI extends JFrame {
 
@@ -361,8 +364,55 @@ public class SymbioteGUI extends JFrame {
 
     private void alternarTema(ActionEvent e) { oscuro = !oscuro; reconstruir(); }
 
+    private static final String[] NOMBRES = { "Factorial.txt", "Facttorial.txt" };
+    private String archivoUsado = "";
+    private String origen = "";
+
+    private String leer(InputStream in) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+        String txt = new String(out.toByteArray(), "UTF-8");
+        if (txt.startsWith("\uFEFF")) txt = txt.substring(1);
+        return txt;
+    }
+
+    private String leerArchivo() {
+        for (String nombre : NOMBRES) {
+            try (InputStream in = SymbioteGUI.class.getResourceAsStream(nombre)) {
+                if (in != null) {
+                    archivoUsado = nombre;
+                    origen = "paquete";
+                    return leer(in);
+                }
+            } catch (IOException ex) {
+            }
+        }
+        String[] carpetas = { "src/symbiote/", "" };
+        for (String carpeta : carpetas) {
+            for (String nombre : NOMBRES) {
+                File f = new File(carpeta + nombre);
+                if (f.isFile()) {
+                    try (InputStream in = new FileInputStream(f)) {
+                        archivoUsado = nombre;
+                        origen = f.getAbsolutePath();
+                        return leer(in);
+                    } catch (IOException ex) {
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private List<Token> ejecutarLexico(boolean mostrarTab) {
-        Lexer lex = new Lexer(editor.getText());
+        String src = leerArchivo();
+        if (src == null) {
+            setEstado("No se encontro Factorial.txt en el paquete symbiote (carpeta de trabajo: " + System.getProperty("user.dir") + ")", false);
+            return null;
+        }
+        Lexer lex = new Lexer(src);
         List<Token> toks = lex.analizar();
 
         modelo.setRowCount(0);
@@ -378,13 +428,14 @@ public class SymbioteGUI extends JFrame {
         lblConteo.setText((toks.size() - 1) + " tokens  ");
         if (mostrarTab) {
             tabs.setSelectedIndex(0);
-            setEstado(errs.isEmpty() ? "Analisis lexico completado sin errores" : errs.size() + " error(es) lexico(s) encontrado(s)", errs.isEmpty());
+            setEstado("[" + archivoUsado + " <- " + origen + "] " + (errs.isEmpty() ? "Analisis lexico completado sin errores" : errs.size() + " error(es) lexico(s) encontrado(s)"), errs.isEmpty());
         }
         return toks;
     }
 
     private Parser ejecutarSintactico() {
         List<Token> toks = ejecutarLexico(false);
+        if (toks == null) return null;
         Parser p = new Parser(toks);
         p.parse();
         List<String> errs = p.getErrores();
@@ -397,6 +448,7 @@ public class SymbioteGUI extends JFrame {
 
     private void ejecutarSemantico() {
         List<Token> toks = ejecutarLexico(false);
+        if (toks == null) return;
         Parser p = new Parser(toks);
         p.parse();
 
@@ -416,11 +468,11 @@ public class SymbioteGUI extends JFrame {
 
     private void cargarEjemplo(ActionEvent e) {
         editor.setText(
-            "fn add(a be int, b be int) -> int {\n" +
-            "    return a + b;\n" +
-            "}\n\n" +
             "ITS DANGEROUS TO GO ALONE, TAKE THIS\n" +
             "{\n" +
+            "    make add(a be int, b be int) -> int {\n" +
+            "        return a + b;\n" +
+            "    }\n\n" +
             "    let scores be int[] = [10, 20, 30];\n" +
             "    let total be int = 0;\n\n" +
             "    for (let i be int = 0; i < 3; i = i + 1) {\n" +
@@ -440,7 +492,7 @@ public class SymbioteGUI extends JFrame {
 
     private void abrirArchivo(ActionEvent e) {
         JFileChooser fc = new JFileChooser();
-        fc.setFileFilter(new FileNameExtensionFilter("Symbiote (*.sym)", "sym"));
+        fc.setFileFilter(new FileNameExtensionFilter("Symbiote (*.txt)", "txt"));
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 String contenido = new String(Files.readAllBytes(fc.getSelectedFile().toPath()));
@@ -473,7 +525,7 @@ public class SymbioteGUI extends JFrame {
         "══════════════════════\n\n" +
         "INICIO DE PROGRAMA\n──────────────────\n" +
         "  ITS DANGEROUS TO GO ALONE, TAKE THIS\n" +
-        "  { ...cuerpo del programa... }\n\n" +
+        "  { ...todo el programa va aqui, incluyendo funciones... }\n\n" +
         "VARIABLES\n─────────\n" +
         "  let nombre be tipo = valor;\n" +
         "  let lista be tipo[] = [v1, v2, v3];\n\n" +
@@ -483,7 +535,7 @@ public class SymbioteGUI extends JFrame {
         "  string   cadena\n" +
         "  bool     true / false\n\n" +
         "FUNCIONES\n─────────\n" +
-        "  fn nombre(param be tipo, ...) -> tipo {\n" +
+        "  make nombre(param be tipo, ...) -> tipo {\n" +
         "      return valor;\n" +
         "  }\n\n" +
         "CONTROL DE FLUJO\n────────────────\n" +
@@ -503,7 +555,7 @@ public class SymbioteGUI extends JFrame {
         "  Lexico       convierte el texto en tokens\n" +
         "  Sintactico   valida la gramatica y arma el AST\n" +
         "  Semantico    construye la tabla de simbolos y\n" +
-        "               revisa que los tipos coincidan\n\n" +
+        "               revisa que los ti coincidan\n\n" +
         "ATAJOS\n──────\n" +
         "  F5   analisis lexico\n" +
         "  F6   analisis sintactico\n" +
