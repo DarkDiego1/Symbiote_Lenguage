@@ -8,10 +8,13 @@ public class Lexer {
     static {
         KW.put("let",    Token.Tipo.LET);
         KW.put("be",     Token.Tipo.BE);
+        KW.put("as",     Token.Tipo.AS);
         KW.put("if",     Token.Tipo.IF);
         KW.put("else",   Token.Tipo.ELSE);
         KW.put("while",  Token.Tipo.WHILE);
         KW.put("for",    Token.Tipo.FOR);
+        KW.put("in",     Token.Tipo.IN);
+        KW.put("to",     Token.Tipo.TO);
         KW.put("make",   Token.Tipo.MAKE);
         KW.put("return", Token.Tipo.RETURN);
         KW.put("emit",   Token.Tipo.EMIT);

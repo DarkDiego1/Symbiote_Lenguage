@@ -423,7 +423,7 @@ public class SymbioteGUI extends JFrame {
             "    }\n\n" +
             "    let scores be int[] = [10, 20, 30];\n" +
             "    let total be int = 0;\n\n" +
-            "    for (let i be int = 0; i < 3; i = i + 1) {\n" +
+            "    for i in 0 to 2 {\n" +
             "        total = total + scores[i];\n" +
             "    }\n\n" +
             "    if (total > 50) {\n" +
@@ -432,7 +432,8 @@ public class SymbioteGUI extends JFrame {
             "        emit(\"Keep trying.\");\n" +
             "    }\n\n" +
             "    let sum be int = add(total, 5);\n" +
-            "    emit(sum);\n" +
+            "    let msg be string = (sum as string) + \" puntos\";\n" +
+            "    emit(msg);\n" +
             "}\n"
         );
         setEstado("Ejemplo cargado", true);
@@ -440,7 +441,7 @@ public class SymbioteGUI extends JFrame {
 
     private void abrirArchivo(ActionEvent e) {
         JFileChooser fc = new JFileChooser();
-        fc.setFileFilter(new FileNameExtensionFilter("Symbiote (*.sym)", "sym"));
+        fc.setFileFilter(new FileNameExtensionFilter("Symbiote (*.txt)", "txt"));
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 String contenido = new String(Files.readAllBytes(fc.getSelectedFile().toPath()));
@@ -488,8 +489,8 @@ public class SymbioteGUI extends JFrame {
         "  }\n\n" +
         "CONTROL DE FLUJO\n────────────────\n" +
         "  if (cond) { ... } else { ... }\n" +
-        "  while (cond) { ... }\n" +
-        "  for (let i be int = 0; i < n; i = i + 1) { ... }\n\n" +
+        "  while cond { ... }\n" +
+        "  for i in inicio to fin { ... }   (incluye fin, i ya es int)\n\n" +
         "SALIDA\n──────\n" +
         "  emit(expresion);\n\n" +
         "OPERADORES\n──────────\n" +
@@ -497,6 +498,10 @@ public class SymbioteGUI extends JFrame {
         "  = == !=       asignacion / igualdad\n" +
         "  < > <= >=     comparacion\n" +
         "  && || !       logicos\n\n" +
+        "CONVERSION DE TIPOS (CAST)\n──────────────────────────\n" +
+        "  int -> float         se hace sola (cast implicito)\n" +
+        "  cualquier otro caso  hay que pedirlo con 'as'\n" +
+        "  valor as tipo        ejemplo: (n as string) + \" pts\"\n\n" +
         "COMENTARIOS\n───────────\n" +
         "  // texto hasta fin de linea\n\n" +
         "FASES DEL ANALIZADOR\n─────────────────────\n" +

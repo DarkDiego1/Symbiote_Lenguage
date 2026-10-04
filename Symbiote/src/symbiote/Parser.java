@@ -104,6 +104,7 @@ public class Parser {
         if (check(Token.Tipo.IF))     return parseIf();
         if (check(Token.Tipo.WHILE))  return parseWhile();
         if (check(Token.Tipo.FOR))    return parseFor();
+        if (check(Token.Tipo.IN))     return parseIn();
         if (check(Token.Tipo.EMIT))   return parseEmit();
         if (check(Token.Tipo.RETURN)) return parseReturn();
         if (check(Token.Tipo.LBRACE)) return parseBloque();
@@ -189,9 +190,7 @@ public class Parser {
         Token kw = advance();
         Mientras n = new Mientras();
         n.ln = kw.ln; n.col = kw.col;
-        expect(Token.Tipo.LPAREN, "se esperaba '(' despues de 'while'");
         n.cond = expr();
-        expect(Token.Tipo.RPAREN, "se esperaba ')' para cerrar la condicion");
         n.cuerpo = parseBloque();
         return n;
     }
@@ -200,26 +199,17 @@ public class Parser {
         Token kw = advance();
         Para n = new Para();
         n.ln = kw.ln; n.col = kw.col;
-        expect(Token.Tipo.LPAREN, "se esperaba '(' despues de 'for'");
-        n.init = parseLet();
-        n.cond = expr();
-        expect(Token.Tipo.SEMI, "se esperaba ';' despues de la condicion");
-        if (check(Token.Tipo.IDENT)) {
-            n.incremento = parseAsignaSinPuntoYComa();
-        } else {
-            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba una variable en el incremento de 'for'");
+        if (!check(Token.Tipo.IDENT)) {
+            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba el nombre del contador despues de 'for'");
+            sincronizar();
+            return n;
         }
-        expect(Token.Tipo.RPAREN, "se esperaba ')' para cerrar el encabezado de 'for'");
+        n.variable = advance().lex;
+        expect(Token.Tipo.IN, "se esperaba 'in' despues del contador de 'for'");
+        n.inicio = expr();
+        expect(Token.Tipo.TO, "se esperaba 'to' entre los dos extremos de 'for'");
+        n.fin = expr();
         n.cuerpo = parseBloque();
-        return n;
-    }
-
-    private Asigna parseAsignaSinPuntoYComa() {
-        Token nom = advance();
-        Asigna n = new Asigna();
-        n.nombre = nom.lex; n.ln = nom.ln; n.col = nom.col;
-        expect(Token.Tipo.ASSIGN, "se esperaba '=' en el incremento de 'for'");
-        n.valor = expr();
         return n;
     }
 
@@ -233,6 +223,32 @@ public class Parser {
         expect(Token.Tipo.SEMI, "se esperaba ';' despues de 'emit'");
         return n;
     }
+    
+    private Entrada parseIn() {
+    Token kw = advance(); // consumes 'in'
+    Entrada n = new Entrada();
+    n.ln = kw.ln; 
+    n.col = kw.col;
+
+    expect(Token.Tipo.LPAREN, "se esperaba '(' despues de 'in'");
+    if (!check(Token.Tipo.IDENT)) {
+        errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de variable en 'in'");
+        sincronizar();
+        return n;
+    }
+
+    Token varToken = advance();
+    n.variable = varToken.lex;
+
+    if (match(Token.Tipo.LBRACKET)) {
+        n.indice = expr();
+        expect(Token.Tipo.RBRACKET, "se esperaba ']'");
+    }
+
+    expect(Token.Tipo.RPAREN, "se esperaba ')' para cerrar 'in'");
+    expect(Token.Tipo.SEMI, "se esperaba ';' despues de 'in'");
+    return n;
+}
 
     private Retorno parseReturn() {
         Token kw = advance();
@@ -296,7 +312,19 @@ public class Parser {
             u.op = op.tipo; u.expr = unaryExpr(); u.ln = op.ln; u.col = op.col;
             return u;
         }
-        return primario();
+        return castExpr();
+    }
+
+    private Expr castExpr() {
+        Expr e = primario();
+        while (check(Token.Tipo.AS)) {
+            Token kw = advance();
+            Token.Tipo destino = parseTipo();
+            Cast c = new Cast();
+            c.expr = e; c.destino = destino; c.ln = kw.ln; c.col = kw.col;
+            e = c;
+        }
+        return e;
     }
 
     private Expr primario() {

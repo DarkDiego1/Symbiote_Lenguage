@@ -53,6 +53,7 @@ public class Semantico {
         if (n instanceof Asigna)   { asigna((Asigna) n); return; }
         if (n instanceof Llamada)  { tipoLlamada((Llamada) n); return; }
         if (n instanceof Si)       { si((Si) n); return; }
+        if (n instanceof Entrada)  { entrada((Entrada) n); return; }
         if (n instanceof Mientras) { mientras((Mientras) n); return; }
         if (n instanceof Para)     { para((Para) n); return; }
         if (n instanceof Emitir)   { emitir((Emitir) n); return; }
@@ -64,6 +65,13 @@ public class Semantico {
         List<Token.Tipo> pts = new ArrayList<>();
         for (Param pr : f.params) pts.add(pr.tipo);
         fns.putIfAbsent(f.nombre, new FnInfo(pts, f.retTipo));
+
+        List<String> nombresVistos = new ArrayList<>();
+        for (Param pr : f.params) {
+            if (nombresVistos.contains(pr.nombre))
+                errs.add("Error semantico [L" + f.ln + ":C" + f.col + "]: el parametro '" + pr.nombre + "' esta repetido en la funcion '" + f.nombre + "'");
+            nombresVistos.add(pr.nombre);
+        }
 
         Map<String, VarInfo> exterior = vars;
         vars = new LinkedHashMap<>(exterior);
@@ -128,11 +136,18 @@ public class Semantico {
     }
 
     private void para(Para n) {
-        if (n.init != null) let(n.init);
-        Token.Tipo tc = tipo(n.cond);
-        if (tc != null && tc != Token.Tipo.BOOL)
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: la condicion de 'for' debe ser bool");
-        if (n.incremento != null) asigna(n.incremento);
+        if (n.variable != null) {
+            if (vars.containsKey(n.variable))
+                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' ya declarada");
+            else
+                vars.put(n.variable, new VarInfo(Token.Tipo.INT, false));
+        }
+        Token.Tipo ti = tipo(n.inicio);
+        Token.Tipo tf = tipo(n.fin);
+        if (ti != null && ti != Token.Tipo.INT)
+            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el inicio de 'for' debe ser int");
+        if (tf != null && tf != Token.Tipo.INT)
+            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el final de 'for' debe ser int");
         bloque(n.cuerpo);
     }
 
@@ -183,6 +198,24 @@ public class Semantico {
         }
 
         if (e instanceof Llamada) return tipoLlamada((Llamada) e);
+
+        if (e instanceof Cast) {
+    Cast c = (Cast) e;
+    Token.Tipo tipoOrigen = tipo(c.expr);
+
+    // Validate that the destination type is a valid primitive type
+    if (c.destino != Token.Tipo.INT && 
+        c.destino != Token.Tipo.FLOAT && 
+        c.destino != Token.Tipo.STRING && 
+        c.destino != Token.Tipo.BOOL) {
+        errs.add("Error semantico [L" + c.ln + ":C" + c.col + "]: tipo de destino invalido para cast '" + nomTipo(c.destino) + "'");
+        return null;
+    }
+
+    // Permissive casting: any primitive type (int, float, string, bool) can be cast to any other primitive type.
+    // We return the destination type immediately so the parent expression treats it as that target type.
+    return c.destino;
+}
 
         if (e instanceof Unaria) {
             Unaria u = (Unaria) e;
@@ -271,4 +304,23 @@ public class Semantico {
             default:     return t.toString().toLowerCase();
         }
     }
+    
+    private void entrada(Entrada n) {
+    if (n.variable == null) return;
+    VarInfo info = vars.get(n.variable);
+    if (info == null) {
+        errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' no declarada en 'in'");
+        return;
+    }
+
+    if (n.indice != null) {
+        if (!info.arr) {
+            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: '" + n.variable + "' no es un arreglo");
+        }
+        Token.Tipo ti = tipo(n.indice);
+        if (ti != null && ti != Token.Tipo.INT) {
+            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el indice debe ser int");
+        }
+    }
+}
 }

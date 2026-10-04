@@ -60,10 +60,10 @@ class Mientras extends Nodo {
 }
 
 class Para extends Nodo {
-    LetDecl init;
-    Expr    cond;
-    Asigna  incremento;
-    Bloque  cuerpo;
+    String variable;
+    Expr   inicio;
+    Expr   fin;
+    Bloque cuerpo;
 }
 
 class Emitir extends Nodo {
@@ -92,4 +92,14 @@ class Binaria extends Expr {
 class Unaria extends Expr {
     Token.Tipo op;
     Expr       expr;
+}
+
+class Cast extends Expr {
+    Expr       expr;
+    Token.Tipo destino;
+}
+
+class Entrada extends Nodo {
+    String variable;
+    Expr   indice; // Optional, in case you want to read into an array like in(arr[0]);
 }
