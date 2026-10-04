@@ -225,30 +225,24 @@ public class Parser {
     }
     
     private Entrada parseIn() {
-    Token kw = advance(); // consumes 'in'
-    Entrada n = new Entrada();
-    n.ln = kw.ln; 
-    n.col = kw.col;
-
-    expect(Token.Tipo.LPAREN, "se esperaba '(' despues de 'in'");
-    if (!check(Token.Tipo.IDENT)) {
-        errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de variable en 'in'");
-        sincronizar();
+        Token kw = advance();
+        Entrada n = new Entrada();
+        n.ln = kw.ln; n.col = kw.col;
+        expect(Token.Tipo.LPAREN, "se esperaba '(' despues de 'in'");
+        if (!check(Token.Tipo.IDENT)) {
+            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de variable en 'in'");
+            sincronizar();
+            return n;
+        }
+        n.variable = advance().lex;
+        if (match(Token.Tipo.LBRACKET)) {
+            n.indice = expr();
+            expect(Token.Tipo.RBRACKET, "se esperaba ']'");
+        }
+        expect(Token.Tipo.RPAREN, "se esperaba ')' para cerrar 'in'");
+        expect(Token.Tipo.SEMI, "se esperaba ';' despues de 'in'");
         return n;
     }
-
-    Token varToken = advance();
-    n.variable = varToken.lex;
-
-    if (match(Token.Tipo.LBRACKET)) {
-        n.indice = expr();
-        expect(Token.Tipo.RBRACKET, "se esperaba ']'");
-    }
-
-    expect(Token.Tipo.RPAREN, "se esperaba ')' para cerrar 'in'");
-    expect(Token.Tipo.SEMI, "se esperaba ';' despues de 'in'");
-    return n;
-}
 
     private Retorno parseReturn() {
         Token kw = advance();
@@ -259,7 +253,17 @@ public class Parser {
         return n;
     }
 
-    private Expr expr() { return orExpr(); }
+    private Expr expr() {
+        Expr e = orExpr();
+        while (check(Token.Tipo.AS)) {
+            Token kw = advance();
+            Token.Tipo destino = parseTipo();
+            Cast c = new Cast();
+            c.expr = e; c.destino = destino; c.ln = kw.ln; c.col = kw.col;
+            e = c;
+        }
+        return e;
+    }
 
     private Expr orExpr() {
         Expr t = andExpr();
@@ -312,19 +316,7 @@ public class Parser {
             u.op = op.tipo; u.expr = unaryExpr(); u.ln = op.ln; u.col = op.col;
             return u;
         }
-        return castExpr();
-    }
-
-    private Expr castExpr() {
-        Expr e = primario();
-        while (check(Token.Tipo.AS)) {
-            Token kw = advance();
-            Token.Tipo destino = parseTipo();
-            Cast c = new Cast();
-            c.expr = e; c.destino = destino; c.ln = kw.ln; c.col = kw.col;
-            e = c;
-        }
-        return e;
+        return primario();
     }
 
     private Expr primario() {

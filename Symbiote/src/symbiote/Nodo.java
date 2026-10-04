@@ -101,5 +101,5 @@ class Cast extends Expr {
 
 class Entrada extends Nodo {
     String variable;
-    Expr   indice; // Optional, in case you want to read into an array like in(arr[0]);
+    Expr   indice;
 }

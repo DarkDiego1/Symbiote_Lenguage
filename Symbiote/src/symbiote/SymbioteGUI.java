@@ -501,7 +501,9 @@ public class SymbioteGUI extends JFrame {
         "CONVERSION DE TIPOS (CAST)\n──────────────────────────\n" +
         "  int -> float         se hace sola (cast implicito)\n" +
         "  cualquier otro caso  hay que pedirlo con 'as'\n" +
-        "  valor as tipo        ejemplo: (n as string) + \" pts\"\n\n" +
+        "  valor as tipo        ejemplo: x + n as string\n" +
+        "  el 'as' convierte TODO lo que suma/resta/multiplica\n" +
+        "  antes de el, no solo el ultimo valor\n\n" +
         "COMENTARIOS\n───────────\n" +
         "  // texto hasta fin de linea\n\n" +
         "FASES DEL ANALIZADOR\n─────────────────────\n" +

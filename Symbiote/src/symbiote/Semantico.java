@@ -200,22 +200,11 @@ public class Semantico {
         if (e instanceof Llamada) return tipoLlamada((Llamada) e);
 
         if (e instanceof Cast) {
-    Cast c = (Cast) e;
-    Token.Tipo tipoOrigen = tipo(c.expr);
-
-    // Validate that the destination type is a valid primitive type
-    if (c.destino != Token.Tipo.INT && 
-        c.destino != Token.Tipo.FLOAT && 
-        c.destino != Token.Tipo.STRING && 
-        c.destino != Token.Tipo.BOOL) {
-        errs.add("Error semantico [L" + c.ln + ":C" + c.col + "]: tipo de destino invalido para cast '" + nomTipo(c.destino) + "'");
-        return null;
-    }
-
-    // Permissive casting: any primitive type (int, float, string, bool) can be cast to any other primitive type.
-    // We return the destination type immediately so the parent expression treats it as that target type.
-    return c.destino;
-}
+            Cast c = (Cast) e;
+            tipo(c.expr);
+            if (c.destino == null) return null;
+            return c.destino;
+        }
 
         if (e instanceof Unaria) {
             Unaria u = (Unaria) e;
@@ -306,21 +295,18 @@ public class Semantico {
     }
     
     private void entrada(Entrada n) {
-    if (n.variable == null) return;
-    VarInfo info = vars.get(n.variable);
-    if (info == null) {
-        errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' no declarada en 'in'");
-        return;
-    }
-
-    if (n.indice != null) {
-        if (!info.arr) {
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: '" + n.variable + "' no es un arreglo");
+        if (n.variable == null) return;
+        VarInfo info = vars.get(n.variable);
+        if (info == null) {
+            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' no declarada en 'in'");
+            return;
         }
-        Token.Tipo ti = tipo(n.indice);
-        if (ti != null && ti != Token.Tipo.INT) {
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el indice debe ser int");
+        if (n.indice != null) {
+            if (!info.arr)
+                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: '" + n.variable + "' no es un arreglo");
+            Token.Tipo ti = tipo(n.indice);
+            if (ti != null && ti != Token.Tipo.INT)
+                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el indice debe ser int");
         }
     }
-}
 }
