@@ -23,7 +23,7 @@ public class Parser {
     private void expect(Token.Tipo t, String msg) {
         if (!match(t)) {
             Token tk = peek();
-            errs.add("Error sintactico [L" + tk.ln + ":C" + tk.col + "]: " + msg + " — se encontro '" + tk.lex + "'");
+            errs.add("Nope [L" + tk.ln + ":C" + tk.col + "]: " + msg + " — se encontro '" + tk.lex + "'");
         }
     }
 
@@ -37,13 +37,13 @@ public class Parser {
         expect(Token.Tipo.ENTRY, "el programa debe iniciar con 'ITS DANGEROUS TO GO ALONE, TAKE THIS'");
         ast.cuerpo = parseBloque();
         if (!check(Token.Tipo.EOF))
-            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: codigo inesperado al final del programa");
+            errs.add("Nope [L" + peek().ln + ":C" + peek().col + "]: codigo inesperado al final del programa");
     }
 
     private Token.Tipo parseTipo() {
         if (!isTipo()) {
             Token t = peek();
-            errs.add("Error sintactico [L" + t.ln + ":C" + t.col + "]: se esperaba un tipo, se encontro '" + t.lex + "'");
+            errs.add("Nope [L" + t.ln + ":C" + t.col + "]: se esperaba un tipo, se encontro '" + t.lex + "'");
             return null;
         }
         return advance().tipo;
@@ -54,7 +54,7 @@ public class Parser {
         FnDecl n = new FnDecl();
         n.ln = f.ln; n.col = f.col;
         if (!check(Token.Tipo.IDENT)) {
-            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de funcion");
+            errs.add("Nope [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de funcion");
             sincronizar();
             return n;
         }
@@ -64,7 +64,7 @@ public class Parser {
             do {
                 Param pr = new Param();
                 if (!check(Token.Tipo.IDENT)) {
-                    errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de parametro");
+                    errs.add("Nope [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de parametro");
                     break;
                 }
                 pr.nombre = advance().lex;
@@ -109,7 +109,7 @@ public class Parser {
         if (check(Token.Tipo.RETURN)) return parseReturn();
         if (check(Token.Tipo.LBRACE)) return parseBloque();
         Token t = peek();
-        errs.add("Error sintactico [L" + t.ln + ":C" + t.col + "]: sentencia desconocida '" + t.lex + "'");
+        errs.add("Nope [L" + t.ln + ":C" + t.col + "]: sentencia desconocida '" + t.lex + "'");
         advance();
         return new Bloque();
     }
@@ -119,7 +119,7 @@ public class Parser {
         LetDecl n = new LetDecl();
         n.ln = kw.ln; n.col = kw.col;
         if (!check(Token.Tipo.IDENT)) {
-            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de variable despues de 'let'");
+            errs.add("Nope [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de variable despues de 'let'");
             sincronizar();
             return n;
         }
@@ -200,7 +200,7 @@ public class Parser {
         Para n = new Para();
         n.ln = kw.ln; n.col = kw.col;
         if (!check(Token.Tipo.IDENT)) {
-            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba el nombre del contador despues de 'for'");
+            errs.add("Nope [L" + peek().ln + ":C" + peek().col + "]: se esperaba el nombre del contador despues de 'for'");
             sincronizar();
             return n;
         }
@@ -230,7 +230,7 @@ public class Parser {
         n.ln = kw.ln; n.col = kw.col;
         expect(Token.Tipo.LPAREN, "se esperaba '(' despues de 'in'");
         if (!check(Token.Tipo.IDENT)) {
-            errs.add("Error sintactico [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de variable en 'in'");
+            errs.add("Nope [L" + peek().ln + ":C" + peek().col + "]: se esperaba nombre de variable en 'in'");
             sincronizar();
             return n;
         }
@@ -350,7 +350,7 @@ public class Parser {
         Token t = peek();
         if (t.tipo != Token.Tipo.EOF && t.tipo != Token.Tipo.SEMI && t.tipo != Token.Tipo.RBRACE &&
             t.tipo != Token.Tipo.RPAREN && t.tipo != Token.Tipo.RBRACKET && t.tipo != Token.Tipo.COMMA) {
-            errs.add("Error sintactico [L" + t.ln + ":C" + t.col + "]: expresion invalida '" + t.lex + "'");
+            errs.add("Nope [L" + t.ln + ":C" + t.col + "]: expresion invalida '" + t.lex + "'");
             advance();
         }
         Literal dummy = new Literal();

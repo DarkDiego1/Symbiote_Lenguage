@@ -69,7 +69,7 @@ public class Semantico {
         List<String> nombresVistos = new ArrayList<>();
         for (Param pr : f.params) {
             if (nombresVistos.contains(pr.nombre))
-                errs.add("Error semantico [L" + f.ln + ":C" + f.col + "]: el parametro '" + pr.nombre + "' esta repetido en la funcion '" + f.nombre + "'");
+                errs.add("Nope [L" + f.ln + ":C" + f.col + "]: el parametro '" + pr.nombre + "' esta repetido en la funcion '" + f.nombre + "'");
             nombresVistos.add(pr.nombre);
         }
 
@@ -84,7 +84,7 @@ public class Semantico {
     private void let(LetDecl n) {
         if (n.nombre == null) return;
         if (vars.containsKey(n.nombre))
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.nombre + "' ya declarada");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: variable '" + n.nombre + "' ya declarada");
         else
             vars.put(n.nombre, new VarInfo(n.tipo, n.arr));
 
@@ -92,37 +92,37 @@ public class Semantico {
             for (Expr e : n.valoresArr) {
                 Token.Tipo tv = tipo(e);
                 if (n.tipo != null && tv != null && !compat(n.tipo, tv))
-                    errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: elemento de arreglo incompatible con " + nomTipo(n.tipo));
+                    errs.add("Nope [L" + n.ln + ":C" + n.col + "]: elemento de arreglo incompatible con " + nomTipo(n.tipo));
             }
         } else if (n.valor != null) {
             Token.Tipo tv = tipo(n.valor);
             if (n.tipo != null && tv != null && !compat(n.tipo, tv))
-                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: tipo incompatible — '" + n.nombre + "' es " + nomTipo(n.tipo) + " pero se asigna " + nomTipo(tv));
+                errs.add("Nope [L" + n.ln + ":C" + n.col + "]: tipo incompatible — '" + n.nombre + "' es " + nomTipo(n.tipo) + " pero se asigna " + nomTipo(tv));
         }
     }
 
     private void asigna(Asigna n) {
         VarInfo info = vars.get(n.nombre);
         if (info == null)
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.nombre + "' no declarada");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: variable '" + n.nombre + "' no declarada");
 
         if (n.indice != null) {
             if (info != null && !info.arr)
-                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: '" + n.nombre + "' no es un arreglo");
+                errs.add("Nope [L" + n.ln + ":C" + n.col + "]: '" + n.nombre + "' no es un arreglo");
             Token.Tipo ti = tipo(n.indice);
             if (ti != null && ti != Token.Tipo.INT)
-                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el indice debe ser int");
+                errs.add("Nope [L" + n.ln + ":C" + n.col + "]: el indice debe ser int");
         }
 
         Token.Tipo tv = tipo(n.valor);
         if (info != null && tv != null && !compat(info.tipo, tv))
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: tipo incompatible — '" + n.nombre + "' es " + nomTipo(info.tipo) + " pero se asigna " + nomTipo(tv));
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: tipo incompatible — '" + n.nombre + "' es " + nomTipo(info.tipo) + " pero se asigna " + nomTipo(tv));
     }
 
     private void si(Si n) {
         Token.Tipo tc = tipo(n.cond);
         if (tc != null && tc != Token.Tipo.BOOL)
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: la condicion de 'if' debe ser bool");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: la condicion de 'if' debe ser bool");
         bloque(n.entonces);
         if (n.sino instanceof Bloque) bloque((Bloque) n.sino);
         else if (n.sino instanceof Si) si((Si) n.sino);
@@ -131,23 +131,23 @@ public class Semantico {
     private void mientras(Mientras n) {
         Token.Tipo tc = tipo(n.cond);
         if (tc != null && tc != Token.Tipo.BOOL)
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: la condicion de 'while' debe ser bool");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: la condicion de 'while' debe ser bool");
         bloque(n.cuerpo);
     }
 
     private void para(Para n) {
         if (n.variable != null) {
             if (vars.containsKey(n.variable))
-                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' ya declarada");
+                errs.add("Nope [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' ya declarada");
             else
                 vars.put(n.variable, new VarInfo(Token.Tipo.INT, false));
         }
         Token.Tipo ti = tipo(n.inicio);
         Token.Tipo tf = tipo(n.fin);
         if (ti != null && ti != Token.Tipo.INT)
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el inicio de 'for' debe ser int");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: el inicio de 'for' debe ser int");
         if (tf != null && tf != Token.Tipo.INT)
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el final de 'for' debe ser int");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: el final de 'for' debe ser int");
         bloque(n.cuerpo);
     }
 
@@ -158,14 +158,14 @@ public class Semantico {
     private Token.Tipo tipoLlamada(Llamada n) {
         FnInfo fi = fns.get(n.nombre);
         if (fi == null)
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: funcion '" + n.nombre + "' no declarada");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: funcion '" + n.nombre + "' no declarada");
         for (int i = 0; i < n.args.size(); i++) {
             Token.Tipo ta = tipo(n.args.get(i));
             if (fi != null && i < fi.params.size() && ta != null && !compat(fi.params.get(i), ta))
-                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: argumento " + (i + 1) + " incompatible en la llamada a '" + n.nombre + "'");
+                errs.add("Nope [L" + n.ln + ":C" + n.col + "]: argumento " + (i + 1) + " incompatible en la llamada a '" + n.nombre + "'");
         }
         if (fi != null && n.args.size() != fi.params.size())
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: '" + n.nombre + "' espera " + fi.params.size() + " argumento(s), se dieron " + n.args.size());
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: '" + n.nombre + "' espera " + fi.params.size() + " argumento(s), se dieron " + n.args.size());
         return fi != null ? fi.ret : null;
     }
 
@@ -185,14 +185,14 @@ public class Semantico {
             Variable v = (Variable) e;
             VarInfo vi = vars.get(v.nombre);
             if (vi == null) {
-                errs.add("Error semantico [L" + v.ln + ":C" + v.col + "]: variable '" + v.nombre + "' no declarada");
+                errs.add("Nope [L" + v.ln + ":C" + v.col + "]: variable '" + v.nombre + "' no declarada");
                 if (v.indice != null) tipo(v.indice);
                 return null;
             }
             if (v.indice != null) {
-                if (!vi.arr) errs.add("Error semantico [L" + v.ln + ":C" + v.col + "]: '" + v.nombre + "' no es un arreglo");
+                if (!vi.arr) errs.add("Nope [L" + v.ln + ":C" + v.col + "]: '" + v.nombre + "' no es un arreglo");
                 Token.Tipo ti = tipo(v.indice);
-                if (ti != null && ti != Token.Tipo.INT) errs.add("Error semantico [L" + v.ln + ":C" + v.col + "]: el indice debe ser int");
+                if (ti != null && ti != Token.Tipo.INT) errs.add("Nope [L" + v.ln + ":C" + v.col + "]: el indice debe ser int");
             }
             return vi.tipo;
         }
@@ -211,11 +211,11 @@ public class Semantico {
             Token.Tipo t = tipo(u.expr);
             if (u.op == Token.Tipo.NOT) {
                 if (t != null && t != Token.Tipo.BOOL)
-                    errs.add("Error semantico [L" + u.ln + ":C" + u.col + "]: el operador '!' requiere bool, se uso " + nomTipo(t));
+                    errs.add("Nope [L" + u.ln + ":C" + u.col + "]: el operador '!' requiere bool, se uso " + nomTipo(t));
                 return Token.Tipo.BOOL;
             }
             if (t != null && t != Token.Tipo.INT && t != Token.Tipo.FLOAT) {
-                errs.add("Error semantico [L" + u.ln + ":C" + u.col + "]: el operador unario '-' no es valido para " + nomTipo(t));
+                errs.add("Nope [L" + u.ln + ":C" + u.col + "]: el operador unario '-' no es valido para " + nomTipo(t));
                 return null;
             }
             return t;
@@ -232,25 +232,25 @@ public class Semantico {
                     if (izq == Token.Tipo.INT && der == Token.Tipo.INT) return Token.Tipo.INT;
                     if (esNumerico(izq) && esNumerico(der)) return Token.Tipo.FLOAT;
                     if (izq == Token.Tipo.STRING && der == Token.Tipo.STRING) return Token.Tipo.STRING;
-                    errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: operacion '+' invalida entre " + nomTipo(izq) + " y " + nomTipo(der));
+                    errs.add("Nope [L" + b.ln + ":C" + b.col + "]: operacion '+' invalida entre " + nomTipo(izq) + " y " + nomTipo(der));
                     return null;
                 case MINUS: case STAR: case SLASH:
                     if (!sabemos) return null;
                     if (izq == Token.Tipo.INT && der == Token.Tipo.INT) return Token.Tipo.INT;
                     if (esNumerico(izq) && esNumerico(der)) return Token.Tipo.FLOAT;
-                    errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: operacion '" + simboloOp(b.op) + "' invalida entre " + nomTipo(izq) + " y " + nomTipo(der));
+                    errs.add("Nope [L" + b.ln + ":C" + b.col + "]: operacion '" + simboloOp(b.op) + "' invalida entre " + nomTipo(izq) + " y " + nomTipo(der));
                     return null;
                 case EQ: case NEQ:
                     if (sabemos && !((esNumerico(izq) && esNumerico(der)) || izq == der))
-                        errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: no se puede comparar " + nomTipo(izq) + " con " + nomTipo(der));
+                        errs.add("Nope [L" + b.ln + ":C" + b.col + "]: no se puede comparar " + nomTipo(izq) + " con " + nomTipo(der));
                     return Token.Tipo.BOOL;
                 case LT: case GT: case LE: case GE:
                     if (sabemos && !(esNumerico(izq) && esNumerico(der)))
-                        errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: la comparacion '" + simboloOp(b.op) + "' requiere valores numericos, se uso " + nomTipo(izq) + " y " + nomTipo(der));
+                        errs.add("Nope [L" + b.ln + ":C" + b.col + "]: la comparacion '" + simboloOp(b.op) + "' requiere valores numericos, se uso " + nomTipo(izq) + " y " + nomTipo(der));
                     return Token.Tipo.BOOL;
                 case AND: case OR:
                     if (sabemos && !(izq == Token.Tipo.BOOL && der == Token.Tipo.BOOL))
-                        errs.add("Error semantico [L" + b.ln + ":C" + b.col + "]: el operador '" + simboloOp(b.op) + "' requiere bool, se uso " + nomTipo(izq) + " y " + nomTipo(der));
+                        errs.add("Nope [L" + b.ln + ":C" + b.col + "]: el operador '" + simboloOp(b.op) + "' requiere bool, se uso " + nomTipo(izq) + " y " + nomTipo(der));
                     return Token.Tipo.BOOL;
                 default:
                     return null;
@@ -298,15 +298,15 @@ public class Semantico {
         if (n.variable == null) return;
         VarInfo info = vars.get(n.variable);
         if (info == null) {
-            errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' no declarada en 'in'");
+            errs.add("Nope [L" + n.ln + ":C" + n.col + "]: variable '" + n.variable + "' no declarada en 'in'");
             return;
         }
         if (n.indice != null) {
             if (!info.arr)
-                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: '" + n.variable + "' no es un arreglo");
+                errs.add("Nope [L" + n.ln + ":C" + n.col + "]: '" + n.variable + "' no es un arreglo");
             Token.Tipo ti = tipo(n.indice);
             if (ti != null && ti != Token.Tipo.INT)
-                errs.add("Error semantico [L" + n.ln + ":C" + n.col + "]: el indice debe ser int");
+                errs.add("Nope [L" + n.ln + ":C" + n.col + "]: el indice debe ser int");
         }
     }
 }

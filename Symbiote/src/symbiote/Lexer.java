@@ -54,7 +54,7 @@ public class Lexer {
             if (Character.isLetter(c) || c == '_')   { palabra(); continue; }
             if (simbolo(c)) continue;
 
-            errs.add("Error lexico [L" + ln + ":C" + col + "]: caracter desconocido '" + c + "'");
+            errs.add("Nope [L" + ln + ":C" + col + "]: caracter desconocido '" + c + "'");
             toks.add(new Token(Token.Tipo.ERROR, String.valueOf(c), ln, col));
             pos++; col++;
         }
@@ -100,7 +100,7 @@ public class Lexer {
                 while (pos < src.length() && Character.isDigit(src.charAt(pos))) { pos++; col++; }
             } else {
                 String lex = src.substring(ip, pos);
-                errs.add("Error lexico [L" + ln + ":C" + ic + "]: decimal mal formado '" + lex + "'");
+                errs.add("Nope [L" + ln + ":C" + ic + "]: decimal mal formado '" + lex + "'");
                 toks.add(new Token(Token.Tipo.ERROR, lex, ln, ic));
                 return;
             }
@@ -108,7 +108,7 @@ public class Lexer {
         if (pos < src.length() && (Character.isLetter(src.charAt(pos)) || src.charAt(pos) == '_')) {
             while (pos < src.length() && (Character.isLetterOrDigit(src.charAt(pos)) || src.charAt(pos) == '_')) { pos++; col++; }
             String t = src.substring(ip, pos);
-            errs.add("Error lexico [L" + ln + ":C" + ic + "]: numero pegado a letras '" + t + "'");
+            errs.add("Nope [L" + ln + ":C" + ic + "]: numero pegado a letras '" + t + "'");
             toks.add(new Token(Token.Tipo.ERROR, t, ln, ic));
             return;
         }
@@ -128,7 +128,7 @@ public class Lexer {
             pos++; col++;
             toks.add(new Token(Token.Tipo.LIT_STRING, "\"" + cont + "\"", ln, ic));
         } else {
-            errs.add("Error lexico [L" + ln + ":C" + ic + "]: cadena sin cerrar");
+            errs.add("Nope [L" + ln + ":C" + ic + "]: cadena sin cerrar");
             toks.add(new Token(Token.Tipo.ERROR, "\"" + cont, ln, ic));
         }
     }
@@ -138,7 +138,7 @@ public class Lexer {
         while (pos < src.length() && (Character.isLetterOrDigit(src.charAt(pos)) || src.charAt(pos) == '_')) { pos++; col++; }
         String lex = src.substring(ip, pos);
         if (lex.length() > 64) {
-            errs.add("Error lexico [L" + ln + ":C" + ic + "]: identificador muy largo");
+            errs.add("Nope [L" + ln + ":C" + ic + "]: identificador muy largo");
             toks.add(new Token(Token.Tipo.ERROR, lex, ln, ic));
             return;
         }
