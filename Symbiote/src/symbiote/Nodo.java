@@ -101,5 +101,5 @@ class Cast extends Expr {
 
 class Entrada extends Nodo {
     String variable;
-    Expr   indice;
+    Expr   indice; 
 }

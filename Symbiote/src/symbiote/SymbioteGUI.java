@@ -142,9 +142,7 @@ public class SymbioteGUI extends JFrame {
         acciones.add(boton("Guardar", null, this::guardarArchivo, false));
         acciones.add(boton(oscuro ? "☀" : "☾", "Cambiar tema", this::alternarTema, false));
         acciones.add(Box.createHorizontalStrut(10));
-        acciones.add(boton("Lexico  F5", null, e -> ejecutarLexico(true), true));
-        acciones.add(boton("Sintactico  F6", null, e -> ejecutarSintactico(), true));
-        acciones.add(boton("Semantico  F7", null, e -> ejecutarSemantico(), true));
+        acciones.add(boton("Analizar  F5", null, e -> ejecutarTodo(), true));
 
         hdr.add(marca, BorderLayout.WEST);
         hdr.add(acciones, BorderLayout.EAST);
@@ -351,17 +349,13 @@ public class SymbioteGUI extends JFrame {
     private void registrarAtajos() {
         InputMap im = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = root.getActionMap();
-        im.put(KeyStroke.getKeyStroke("F5"), "lex");
-        am.put("lex", new AbstractAction() { public void actionPerformed(ActionEvent e) { ejecutarLexico(true); } });
-        im.put(KeyStroke.getKeyStroke("F6"), "sin");
-        am.put("sin", new AbstractAction() { public void actionPerformed(ActionEvent e) { ejecutarSintactico(); } });
-        im.put(KeyStroke.getKeyStroke("F7"), "sem");
-        am.put("sem", new AbstractAction() { public void actionPerformed(ActionEvent e) { ejecutarSemantico(); } });
+        im.put(KeyStroke.getKeyStroke("F5"), "todo");
+        am.put("todo", new AbstractAction() { public void actionPerformed(ActionEvent e) { ejecutarTodo(); } });
     }
 
     private void alternarTema(ActionEvent e) { oscuro = !oscuro; reconstruir(); }
 
-    private List<Token> ejecutarLexico(boolean mostrarTab) {
+    private void ejecutarTodo() {
         Lexer lex = new Lexer(editor.getText());
         List<Token> toks = lex.analizar();
 
@@ -370,43 +364,37 @@ public class SymbioteGUI extends JFrame {
             if (t.tipo == Token.Tipo.EOF) continue;
             modelo.addRow(new Object[]{t.ln, t.col, t.lex, t.display(), t.categoria()});
         }
-
-        List<String> errs = lex.getErrores();
-        errLex.setText(errs.isEmpty() ? "Sin errores lexicos." : String.join("\n", errs));
-        errLex.setForeground(errs.isEmpty() ? OK : errFg);
-
+        List<String> errsLex = lex.getErrores();
+        errLex.setText(errsLex.isEmpty() ? "Sin errores lexicos." : String.join("\n", errsLex));
+        errLex.setForeground(errsLex.isEmpty() ? OK : errFg);
         lblConteo.setText((toks.size() - 1) + " tokens  ");
-        if (mostrarTab) {
-            tabs.setSelectedIndex(0);
-            setEstado(errs.isEmpty() ? "Analisis lexico completado sin errores" : errs.size() + " error(es) lexico(s) encontrado(s)", errs.isEmpty());
-        }
-        return toks;
-    }
 
-    private Parser ejecutarSintactico() {
-        List<Token> toks = ejecutarLexico(false);
         Parser p = new Parser(toks);
         p.parse();
-        List<String> errs = p.getErrores();
-        errSin.setText(errs.isEmpty() ? "Sin errores sintacticos." : String.join("\n", errs));
-        errSin.setForeground(errs.isEmpty() ? OK : errFg);
-        tabs.setSelectedIndex(2);
-        setEstado(errs.isEmpty() ? "Analisis sintactico completado sin errores" : errs.size() + " error(es) sintactico(s) encontrado(s)", errs.isEmpty());
-        return p;
-    }
-
-    private void ejecutarSemantico() {
-        List<Token> toks = ejecutarLexico(false);
-        Parser p = new Parser(toks);
-        p.parse();
+        List<String> errsSin = p.getErrores();
+        errSin.setText(errsSin.isEmpty() ? "Sin errores sintacticos." : String.join("\n", errsSin));
+        errSin.setForeground(errsSin.isEmpty() ? OK : errFg);
 
         Semantico s = new Semantico();
         s.analizar(p.getAst());
-        List<String> errs = s.getErrores();
-        errSem.setText(errs.isEmpty() ? "Sin errores semanticos." : String.join("\n", errs));
-        errSem.setForeground(errs.isEmpty() ? OK : errFg);
-        tabs.setSelectedIndex(3);
-        setEstado(errs.isEmpty() ? "Analisis semantico completado sin errores" : errs.size() + " error(es) semantico(s) encontrado(s)", errs.isEmpty());
+        List<String> errsSem = s.getErrores();
+        errSem.setText(errsSem.isEmpty() ? "Sin errores semanticos." : String.join("\n", errsSem));
+        errSem.setForeground(errsSem.isEmpty() ? OK : errFg);
+
+        int total = errsLex.size() + errsSin.size() + errsSem.size();
+        if (total == 0) {
+            tabs.setSelectedIndex(0);
+            setEstado("Analisis completo sin errores", true);
+        } else if (!errsLex.isEmpty()) {
+            tabs.setSelectedIndex(1);
+            setEstado(total + " error(es) encontrado(s) — revisa la pestaña Lexico", false);
+        } else if (!errsSin.isEmpty()) {
+            tabs.setSelectedIndex(2);
+            setEstado(total + " error(es) encontrado(s) — revisa la pestaña Sintactico", false);
+        } else {
+            tabs.setSelectedIndex(3);
+            setEstado(total + " error(es) encontrado(s) — revisa la pestaña Semantico", false);
+        }
     }
 
     private void setEstado(String msg, boolean ok) {
@@ -501,9 +489,7 @@ public class SymbioteGUI extends JFrame {
         "CONVERSION DE TIPOS (CAST)\n──────────────────────────\n" +
         "  int -> float         se hace sola (cast implicito)\n" +
         "  cualquier otro caso  hay que pedirlo con 'as'\n" +
-        "  valor as tipo        ejemplo: x + n as string\n" +
-        "  el 'as' convierte TODO lo que suma/resta/multiplica\n" +
-        "  antes de el, no solo el ultimo valor\n\n" +
+        "  valor as tipo        ejemplo: (n as string) + \" pts\"\n\n" +
         "COMENTARIOS\n───────────\n" +
         "  // texto hasta fin de linea\n\n" +
         "FASES DEL ANALIZADOR\n─────────────────────\n" +
@@ -512,9 +498,9 @@ public class SymbioteGUI extends JFrame {
         "  Semantico    construye la tabla de simbolos y\n" +
         "               revisa que los tipos coincidan\n\n" +
         "ATAJOS\n──────\n" +
-        "  F5   analisis lexico\n" +
-        "  F6   analisis sintactico\n" +
-        "  F7   analisis semantico\n";
+        "  F5   analiza todo (lexico, sintactico y semantico)\n" +
+        "       revisa las pestañas Lexico / Sintactico / Semantico\n" +
+        "       para ver los errores de cada fase por separado\n";
     }
 
     private void estilizarBarra(JScrollBar sb) {
